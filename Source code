@@ -1,0 +1,145 @@
+######################### dataset creating part
+import os
+import cv2
+import numpy as np
+
+path="Dataset" # inside this foler there are 2 sub folders male and female which consist dataset upto 2000 images
+categories=os.listdir(path)
+lables=list(range(len(categories)))
+
+categoryDict=dict(zip(categories,lables))
+
+size=50
+dataset=[]
+
+for category in categories:
+    imgs_path=os.path.join(path,category)
+    imgs_names=os.listdir(imgs_path)  # locating to the dataset 
+    
+    for img_name in imgs_names:
+        img_path=os.path.join(imgs_path,img_name)
+        img=cv2.imread(img_path)   #read each image
+        
+        try:
+            gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+            gray=cv2.resize(gray,(size,size))
+            gray=gray/255.0
+            dataset.append([gray,categoryDict[category]]) # and append to the dataset to 2dim arrya with image and target
+        
+        except Exception as e:
+            print(e)
+print(categoryDict)
+            
+from random import shuffle 
+shuffle(dataset)# shuffel the dataset 
+
+data=[]
+target=[]
+
+for img,label in dataset:
+    data.append(img)#images are appended to the array called data and target , separate arrays
+    target.append(label)
+    
+data=np.array(data)# converting to numpy array
+target=np.array(target)
+    
+data=data.reshape(data.shape[0],size,size,1)  
+from keras.utils import np_utils
+target=np_utils.to_categorical(target)#convert target into categorical data form (converting to dummy variables)
+
+np.save("data",data) #save 
+np.save("target",target)    
+
+##################################################################### creating the cnn 
+from keras.models import Sequential
+from keras.layers import Dense,Activation,Flatten,Dropout
+from keras.layers import Conv2D,MaxPooling2D
+
+model=Sequential()
+
+model.add(Conv2D(256,(3,3),input_shape=data.shape[1:]))
+model.add(Activation('relu'))
+
+model.add(MaxPooling2D(pool_size=(2,2)))
+
+model.add(Flatten())
+
+model.add(Dense(64,activation='relu'))
+
+model.add(Dense(2,activation='softmax'))
+
+model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+
+from sklearn.model_selection import train_test_split
+train_data,test_data,train_target,test_target=train_test_split(data,target,test_size=0.1)
+
+history=model.fit(train_data,train_target,epochs=20,validation_split=0.2)
+
+
+from matplotlib import pyplot as plt
+plt.plot(history.history['loss'],'b')
+plt.plot(history.history['val_loss'],'r')
+
+
+plt.plot(history.history['acc'],'b')
+plt.plot(history.history['val_acc'],'r')
+
+
+print(model.evaluate(test_data,test_target))     
+
+
+###################################################upload the web stream or image for prediction
+#load web cam stream for prediction
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml') # We load the cascade for the face.
+
+category={0:'female',1:'male'}
+#cap = cv2.VideoCapture('https://192.168.43.1:8080/video')
+cap = cv2.VideoCapture(0)# getting web cam video stream
+while True:
+    _, frame = cap.read()
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+    for (x, y, w, h) in faces:
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2) # We paint a rectangle around the face.
+        crop_img = frame[y:y+h, x:x+w]
+        gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
+        resized=cv2.resize(gray,(50,50))
+        normalized=resized/255.0
+        reshaped=np.reshape(normalized,(1,50,50,1))
+
+        result=model.predict(reshaped)# upload the croped image to the cnn for predict
+        label=np.argmax(result,axis=1)[0]#getting the predicted result using argmax funciton
+        prob=np.max(result,axis=1)[0]
+        prob=round(prob,2)*100#calculat the probabiltiy
+
+        cv2.putText(frame,str(category[label]),(x,y),cv2.FONT_HERSHEY_SIMPLEX,1,
+                    (255,255,0),2)#putting the text that saying whether man or female in the web stream
+        
+    cv2.imshow('video original',frame)
+    cv2.waitKey(1)
+########################################################################### the below codes are seperate to the upper code block
+## load the external image and upload to cnn for prediction
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml') # We load the cascade for the face.
+category={0:'female',1:'male'}        
+frame=cv2.imread("depositphotos_169500808-stock-photo-diverse-group-of-business-people.jpg")#loading image
+gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+for (x, y, w, h) in faces:
+    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2) # We paint a rectangle around the face.
+    crop_img = frame[y:y+h, x:x+w]
+    gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
+    resized=cv2.resize(gray,(50,50))
+    normalized=resized/255.0
+    reshaped=np.reshape(normalized,(1,50,50,1))
+
+    result=model.predict(reshaped)
+    label=np.argmax(result,axis=1)[0]
+    prob=np.max(result,axis=1)[0]
+    prob=round(prob,2)*100
+
+    cv2.putText(frame,str(category[label]),(x,y),cv2.FONT_HERSHEY_SIMPLEX,1,
+                    (255,255,0),2)
+        
+
+cv2.imshow('video original',frame)
+cv2.waitKey(0)
