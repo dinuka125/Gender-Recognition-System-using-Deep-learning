@@ -7,3 +7,4 @@ then we input image or webcam input ,
 then using cascade classifiers we identify the faces in image/webcam stream. Then we crop the faces and upload them to the
 neural network and get the predicted result. And we show the result lable in the image.
 
+check ss.png attached to this repositary for example output
