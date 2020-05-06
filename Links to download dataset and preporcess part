@@ -1,0 +1,37 @@
+##https://susanqq.github.io/UTKFace/
+
+##in order to use this facedata images these images need to be preprocessed
+##i did that using following code 
+### when you dowload the dataset and extract it to the one folder then you have to classifiy male images to 1 folder to and female to another and cropped them using this code 
+# in this code i save them in "Dataset/Male" and "Dataset/Female"
+#after finish this code you have corped images of male and female images in separate folders
+#then you can train neural network 
+
+import cv2
+import os
+
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml') # We load the cascade for the face.
+
+
+path="imgs"
+categories=os.listdir(path)
+save_path1="Dataset/Male"
+save_path2="Dataset/Female"
+for cate in categories:
+    imgs_path=os.path.join(path,cate)
+    imgs_names=os.listdir(imgs_path)
+    for img in imgs_names:
+        imgs_paths=os.path.join(imgs_path,img)
+        image=cv2.imread(imgs_paths)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        for (x, y, w, h) in faces: # For each detected face:
+            cv2.rectangle(image, (x, y), (x+w, y+h), (0, 0, 255), 2) # We paint a rectangle around the face.
+            crop_img = image[y:y+h, x:x+w]
+            print("X", end="")
+            if cate=="male":
+                cv2.imwrite(os.path.join(save_path1, img),crop_img)
+                cv2.waitKey(0)
+            elif cate=="female":
+                cv2.imwrite(os.path.join(save_path2, img),crop_img)
+                cv2.waitKey(0)
