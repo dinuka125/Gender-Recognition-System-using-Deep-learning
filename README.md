@@ -8,3 +8,5 @@ then using cascade classifiers we identify the faces in image/webcam stream. The
 neural network and get the predicted result. And we show the result label in the image.
 
 check ss.png attached to this repository for example output
+
+picture source : https://depositphotos.com/
