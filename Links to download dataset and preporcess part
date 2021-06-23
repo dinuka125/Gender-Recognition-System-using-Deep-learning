@@ -3,8 +3,8 @@
 ##in order to use this facedata images these images need to be preprocessed
 ##i did that using following code 
 ### when you dowload the dataset and extract it to the one folder then you have to classifiy male images to 1 folder to and female to another and cropped them using this code 
-# in this code i save them in "Dataset/Male" and "Dataset/Female"
-#after finish this code you have corped images of male and female images in separate folders
+# in this code i have saved them in "Dataset/Male" and "Dataset/Female"
+#after this code you have to corped images of male and female images in separate folders
 #then you can train neural network 
 
 import cv2
